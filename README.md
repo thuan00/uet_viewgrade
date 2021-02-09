@@ -1,25 +1,42 @@
 
 # viewgrade
-This tool analyzes the grades in pdf docs from http://112.137.129.30/viewgrade/ (UET site for)
+This tool counts the grades in pdf docs from http://112.137.129.30/viewgrade/ (an UET site for grades publication)
 
 ```console
 ncthuan:~$ python viewgrade.py "./data/sample/051926290121Du an cong nghe_INT3132 20_0001.pdf"
+
 Total recognized: 73
 Grade: %
  A+  : 65
  A   : 9
  B+  : 6
  B   : 2
- C+  : 0
- C   : 0
+ C+  : -
+ C   : -
  D+  : 6
- D   : 0
+ D   : -
  F   : 6
  N/A : 1
 ```
 
-## Installing
-Still updating
+## Installation
+requirements:
+* opencv
+* numpy
+* tesseract
+* pytesseract
+* pdf2image
+* poppler
+
+Yall gonna need an environment that has those packages above to run the code.<br>
+Personally, I use annaconda or miniconda on Windows 10 so I might use the following commands:
+```
+conda install -c conda-forge tesseract
+conda install -c conda-forge poppler
+pip install pytesseract
+pip install pdf2image
+pip install opencv
+```
 
 
 ## Usage
