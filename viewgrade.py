@@ -4,11 +4,9 @@ import numpy as np
 import re
 import argparse
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-#-----------------------------
+
 # config
-POPPLER_PATH = './poppler/Library/bin/'
 DPI = 200  #-> default img shape 2339x1654, do not change this
 BIN_INV_THRESHOLD = 192
 #
@@ -29,18 +27,15 @@ TONGDIEM_COLUMN_WIDTH = 120
 TESSERACT_NUMBER_CONFIG = "-l eng --oem 1 --psm 8 tessedit_char_whitelist=0123456789."
 #GRADE_SCALE = [4.0, 5.0, 5.5, 6.5, 7.0, 8.0, 8.5, 9.0] #F,D,D+,C,C+,B,B+,A,A+
 
-#---------------
 
 
 def pdf_to_np(path):
-    pil_images = convert_from_path(path, dpi=DPI, grayscale=True, poppler_path=POPPLER_PATH)
+    pil_images = convert_from_path(path, dpi=DPI, grayscale=True)  #, poppler_path=POPPLER_PATH)
     np_images = [np.array(pil_images[i]) for i in range(len(pil_images))]
     return np_images
 
 
-def deskew(img, first_page):
-    ''' first_page: bool, indicate if img is the first page
-    '''
+def deskew(img):
     (thresh, img_bin) = cv2.threshold(img, BIN_INV_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_CLOSE, KERNEL_3x3)
     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, VERTICAL_FILTER)
@@ -56,8 +51,9 @@ def deskew(img, first_page):
     return img
 
     
-def detect_grade_column(deskewed_img, first_page):
-    ''''''
+def detect_grade_column(deskewed_img):
+    ''' return: (xmin, ymin, xmax, ymax) - the bounding box for the grade column
+    '''
     y1,y2, x1,x2 = TONGDIEM_EXPECTED_REGION
     tongdiem_expected_region = 255-deskewed_img[y1:y2,x1:x2]
     res = cv2.matchTemplate(tongdiem_expected_region, PATTERN_TONGDIEM, cv2.TM_CCORR)
@@ -72,8 +68,8 @@ def detect_grade_column(deskewed_img, first_page):
 
 
 def get_rows(column):
-    ''' column: nparray, cropped grades column
-    return grade_bboxes that wrap the content of the grade on each row
+    ''' column: np ndarray - cropped grades column
+        return: list of bounding boxes for the grade in each rows
     '''
     (thresh, column_bin) = cv2.threshold(column, 192, BIN_INV_THRESHOLD, cv2.THRESH_BINARY_INV)
     column_bin = cv2.morphologyEx(column_bin, cv2.MORPH_CLOSE, ROW_FILTER, borderValue=0)
@@ -95,6 +91,9 @@ def get_rows(column):
     
 
 def read_grades(path):
+    ''' path: string - path to the single pdf file
+        return: list of final grades
+    '''
     grades = []
     images = pdf_to_np(path)
     for i,img in enumerate(images):
@@ -114,17 +113,19 @@ def read_grades(path):
     return grades
 
 def ocr(ROI):
+    ''' ROI: np ndarray - the grade cropped from each row
+        return: float
+    '''
     text = pytesseract.image_to_string(ROI, config=TESSERACT_NUMBER_CONFIG)
-    text = re.sub("[^0-9.]", "", text)  #exclude '\n\x0c'
+    text = re.sub("[^0-9.]", "", text)  #exclude '\n\x0c' and failed ocr
     if len(text) == 0: 
-        return -1
+        return -1.
     grade = float(text)
-    if grade > 10: 
-        grade /= 10
+    grade = grade/10 if grade>10
     return grade
 
 
-def analyze_grades(grades):
+def count_grades(grades):
     grade_map = {
         'A+': 0,
         'A' : 0,
@@ -162,25 +163,21 @@ def analyze_grades(grades):
     return grade_map
 
 
-#path = './data/sample/051926290121Du an cong nghe_INT3132 20_0001.pdf'
-#'./data/sample/051603260121Kien truc may tinh_INT2212 9.pdf'
 
 if __name__ == '__main__':
-
     ap = argparse.ArgumentParser()
     ap.add_argument('path')
     #ap.add_argument("-m", "--model", required=True, help="")
     args = ap.parse_args()
-    
     path = args.path
     
     grades = read_grades(path)
-    grade_map = analyze_grades(grades)
+    grade_map = count_grades(grades)
 
     n_grades = len(grades)
     print('\nTotal recognized:', n_grades)
     print('Grade: %')
     for grade, count in grade_map.items():
-        print(f' {grade.ljust(3)} : {count*100//n_grades}')
+        print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else '-'}')
 
     #breakpoint()
