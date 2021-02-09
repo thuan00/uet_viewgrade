@@ -97,11 +97,10 @@ def read_grades(path):
     grades = []
     images = pdf_to_np(path)
     for i,img in enumerate(images):
-        first_page = True if i==0 else False
 
-        img = deskew(img, first_page=first_page)
-
-        x1,y1, x2,y2 = detect_grade_column(img, first_page=first_page)
+        img = deskew(img)
+        
+        x1,y1, x2,y2 = detect_grade_column(img)
         column = img[y1:y2,x1:x2]
 
         rows = get_rows(column)
@@ -121,7 +120,8 @@ def ocr(ROI):
     if len(text) == 0: 
         return -1.
     grade = float(text)
-    grade = grade/10 if grade>10
+    if grade > 10:
+        grade /= 10
     return grade
 
 
@@ -178,6 +178,6 @@ if __name__ == '__main__':
     print('\nTotal recognized:', n_grades)
     print('Grade: %')
     for grade, count in grade_map.items():
-        print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else '-'}')
+        print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else "-"}')
 
     #breakpoint()
