@@ -2,8 +2,13 @@
 # viewgrade
 This tool counts the grades in pdf docs from http://112.137.129.30/viewgrade/ (an UET site for grades publication)
 
+![Sample data](./data/sample/sample.png)
+
+#### Console Example
 ```console
-ncthuan:~$ python viewgrade.py "./data/sample/051926290121Du an cong nghe_INT3132 20_0001.pdf"
+ncthuan:~$ python viewgrade.py
+
+Enter path: http://112.137.129.30/viewgrade/public/upload/051926290121Du%20an%20cong%20nghe_INT3132%2020_0001.pdf
 
 Total recognized: 73
 Grade: %
@@ -17,6 +22,10 @@ Grade: %
  D   : -
  F   : 6
  N/A : 1
+
+Enter path: q
+
+ncthuan:~$
 ```
 
 ## Installation
@@ -40,19 +49,22 @@ pip install opencv
 
 
 ## Usage
-Command
+#### Command
 ```
-python viewgrade.py "<path to local pdf grade file>"
+python viewgrade.py
 ```
-
+* then paste in the url or local file path
+* enter "q" to quit
 
 ## How it works
-check out the notebook experiment.ipynb for more details
+It uses OpenCV image processing APIs to extract grades' bounding boxes and then passes them to tesseract for OCR.<br>
+Check out the notebook **experiment.ipynb** for more details
 
 ## Sample data
 data/sample/
 
 ## To do
-* function: send request to the server to get pdf files as bytes
-* cmd with arg as a link
-* try deep learning
+* [x] function: send request to the server to get pdf files as bytes
+* [x] enter path as a url, while loop
+* [ ] try other OCR approaches
+* [ ] try deep learning
