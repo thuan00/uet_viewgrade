@@ -1,8 +1,8 @@
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path, convert_from_bytes
+import requests
 import cv2
 import numpy as np
 import re
-import argparse
 import pytesseract
 
 
@@ -15,11 +15,11 @@ ROW_FILTER = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
 KERNEL_3x3 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 KERNEL_5x5 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 #
-HEADER, FOOTER = 300, 2200
+HEADER, FOOTER = 300, 2250
 HOUGH_LINES_THRESHOLD = 300
 MIN_THETA, MAX_THETA = [-np.pi/18, np.pi/18]  #-10, 10 degree
 #
-TONGDIEM_EXPECTED_REGION = 250, 750, 1300, 1600  #y1y2 x1x2
+TONGDIEM_EXPECTED_REGION = 250, 750, 1300, 1650  #y1y2 x1x2
 PATTERN_TONGDIEM = cv2.imread('./data/pattern_tongdiem.png', 0)
 PATTERN_H, PATTERN_W = PATTERN_TONGDIEM.shape
 TONGDIEM_COLUMN_WIDTH = 120
@@ -28,9 +28,19 @@ TESSERACT_NUMBER_CONFIG = "-l eng --oem 1 --psm 8 tessedit_char_whitelist=012345
 #GRADE_SCALE = [4.0, 5.0, 5.5, 6.5, 7.0, 8.0, 8.5, 9.0] #F,D,D+,C,C+,B,B+,A,A+
 
 
+def is_local_file(path):
+    return path[:4] != 'http'
 
 def pdf_to_np(path):
-    pil_images = convert_from_path(path, dpi=DPI, grayscale=True)  #, poppler_path=POPPLER_PATH)
+    if is_local_file(path):
+        pil_images = convert_from_path(path, dpi=DPI, grayscale=True)
+    else:
+        print('Requesting pdf file from server... ', end='')
+        response = requests.get(path)
+        print('Done')
+        assert response.status_code == 200, 'Oops, got some problems requesting the server'
+        pil_images = convert_from_bytes(response.content, dpi=DPI, grayscale=True)
+
     np_images = [np.array(pil_images[i]) for i in range(len(pil_images))]
     return np_images
 
@@ -71,7 +81,7 @@ def get_rows(column):
     ''' column: np ndarray - cropped grades column
         return: list of bounding boxes for the grade in each rows
     '''
-    (thresh, column_bin) = cv2.threshold(column, 192, BIN_INV_THRESHOLD, cv2.THRESH_BINARY_INV)
+    (thresh, column_bin) = cv2.threshold(column, BIN_INV_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
     column_bin = cv2.morphologyEx(column_bin, cv2.MORPH_CLOSE, ROW_FILTER, borderValue=0)
     column_bin = cv2.morphologyEx(column_bin, cv2.MORPH_OPEN, KERNEL_5x5)
 
@@ -103,8 +113,8 @@ def read_grades(path):
         x1,y1, x2,y2 = detect_grade_column(img)
         column = img[y1:y2,x1:x2]
 
-        rows = get_rows(column)
-        for x1,y1, x2,y2 in rows:
+        grade_bboxes = get_rows(column)
+        for x1,y1, x2,y2 in grade_bboxes:
             ROI = column[y1:y2,x1:x2]
             grade = ocr(ROI)
             grades.append(grade)
@@ -165,19 +175,19 @@ def count_grades(grades):
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
-    ap.add_argument('path')
-    #ap.add_argument("-m", "--model", required=True, help="")
-    args = ap.parse_args()
-    path = args.path
     
-    grades = read_grades(path)
-    grade_map = count_grades(grades)
+    while True:
+        path = input('\nEnter path: ')
+        if path == 'q':
+            quit()
 
-    n_grades = len(grades)
-    print('\nTotal recognized:', n_grades)
-    print('Grade: %')
-    for grade, count in grade_map.items():
-        print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else "-"}')
+        grades = read_grades(path)
+        grade_map = count_grades(grades)
 
-    #breakpoint()
+        n_grades = len(grades)
+        print('\nTotal recognized:', n_grades)
+        print('Grade: %')
+        for grade, count in grade_map.items():
+            print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else "-"}')
+
+        #breakpoint()
