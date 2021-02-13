@@ -1,6 +1,8 @@
 
 # viewgrade
-This tool counts the grades in pdf docs from http://112.137.129.30/viewgrade/ (an UET site for grades publication)
+This tool counts the grades in pdf docs from http://112.137.129.30/viewgrade/ (an UET site for grades publication)<br>
+It should work well on the **majority** of the pdf docs on the site. <br>
+Typically takes **2-10s** for each pdf doc, depending on the number pages and grades.
 
 ![Sample data](./data/sample/sample.png)
 
@@ -66,5 +68,6 @@ data/sample/
 ## To do
 * [x] function: send request to the server to get pdf files as bytes
 * [x] enter path as a url, while loop
+* [ ] further testing and config fine tuning
 * [ ] try other OCR approaches
 * [ ] try deep learning
