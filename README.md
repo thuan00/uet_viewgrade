@@ -1,8 +1,8 @@
 
 # viewgrade
 This tool counts the grades in pdf docs from http://112.137.129.30/viewgrade/ (an UET site for grades publication)<br>
-It should work well on the **majority** of the pdf docs on the site. <br>
-Typically takes **2-10s** for each pdf doc, depending on the number pages and grades.
+It should work fine on the **majority** of the pdf docs with **acceptable** accuracy.<br>
+Typically takes **2-10s** or more for each pdf doc, depending on the number pages and grades.
 
 ![Sample data](./data/sample/sample.png)
 

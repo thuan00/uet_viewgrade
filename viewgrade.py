@@ -15,7 +15,7 @@ ROW_FILTER = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
 KERNEL_3x3 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 KERNEL_5x5 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 #
-HEADER, FOOTER = 300, 2250
+HEADER, FOOTER = 300, 2230
 HOUGH_LINES_THRESHOLD = 300
 MIN_THETA, MAX_THETA = [-np.pi/18, np.pi/18]  #-10, 10 degree
 #
@@ -188,6 +188,6 @@ if __name__ == '__main__':
         print('\nTotal recognized:', n_grades)
         print('Grade: %')
         for grade, count in grade_map.items():
-            print(f' {grade.ljust(3)} : {count*100//n_grades if count != 0 else "-"}')
+            print(f' {grade.ljust(3)} : {round(count*100/n_grades) if count != 0 else "-"}')
 
         #breakpoint()
