@@ -58,6 +58,12 @@ python viewgrade.py
 * then paste in the url or local file path
 * enter "q" to quit
 
+#### Import function
+```
+from viewgrade import read_grades
+```
+
+
 ## How it works
 It uses OpenCV image processing APIs to extract grades' bounding boxes and then passes them to tesseract for OCR.<br>
 Check out the notebook **experiment.ipynb** for more details
@@ -66,8 +72,10 @@ Check out the notebook **experiment.ipynb** for more details
 data/sample/
 
 ## To do
+Still, so much room for improvement
 * [x] function: send request to the server to get pdf files as bytes
 * [x] enter path as a url, while loop
 * [ ] further testing and config fine tuning
 * [ ] try other OCR approaches
+* [ ] multi threading, async approaches
 * [ ] try deep learning
