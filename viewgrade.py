@@ -15,11 +15,11 @@ ROW_FILTER = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
 KERNEL_3x3 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 KERNEL_5x5 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 #
-HEADER, FOOTER = 300, 2230
+HEADER, FOOTER = 300, 2205
 HOUGH_LINES_THRESHOLD = 300
 MIN_THETA, MAX_THETA = [-np.pi/18, np.pi/18]  #-10, 10 degree
 #
-TONGDIEM_EXPECTED_REGION = 250, 750, 1300, 1650  #y1y2 x1x2
+TONGDIEM_EXPECTED_REGION = 1300, 270, 1650, 750,  #x1 y1 x2 y2
 PATTERN_TONGDIEM = cv2.imread('./data/pattern_tongdiem.png', 0)
 PATTERN_H, PATTERN_W = PATTERN_TONGDIEM.shape
 TONGDIEM_COLUMN_WIDTH = 120
@@ -64,7 +64,7 @@ def deskew(img):
 def detect_grade_column(deskewed_img):
     ''' return: (xmin, ymin, xmax, ymax) - the bounding box for the grade column
     '''
-    y1,y2, x1,x2 = TONGDIEM_EXPECTED_REGION
+    x1,y1, x2,y2 = TONGDIEM_EXPECTED_REGION
     tongdiem_expected_region = 255-deskewed_img[y1:y2,x1:x2]
     res = cv2.matchTemplate(tongdiem_expected_region, PATTERN_TONGDIEM, cv2.TM_CCORR)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -121,17 +121,19 @@ def read_grades(path):
         # try multi thread
     return grades
 
+
 def ocr(ROI):
     ''' ROI: np ndarray - the grade cropped from each row
-        return: float
+        return: float - -1.0 for unrecognized
     '''
-    text = pytesseract.image_to_string(ROI, config=TESSERACT_NUMBER_CONFIG)
-    text = re.sub("[^0-9.]", "", text)  #exclude '\n\x0c' and failed ocr
-    if len(text) == 0: 
-        return -1.
-    grade = float(text)
-    if grade > 10:
-        grade /= 10
+    grade = -1.0
+    try:
+      text = pytesseract.image_to_string(ROI, config=TESSERACT_NUMBER_CONFIG)
+      text = re.sub("[^0-9.]", "", text)  #exclude '\n\x0c' and failed ocr
+      grade = float(text)
+      if grade > 10: grade /= 10
+    except:
+      pass
     return grade
 
 
