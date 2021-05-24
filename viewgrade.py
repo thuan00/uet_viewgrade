@@ -51,14 +51,19 @@ def deskew(img):
     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, VERTICAL_FILTER)
 
     lines = cv2.HoughLines(img_bin[HEADER:FOOTER], 1, np.pi/360, HOUGH_LINES_THRESHOLD, min_theta=MIN_THETA, max_theta=MAX_THETA)
-    angle = np.mean(lines[:5,:,1])*180/np.pi #first 5 lines
-    if angle > 1.0: # deskew
+    if lines is None or len(lines) < 5:
+        return img, float('inf') # indicates a failed deskew, when the img doesn't contain enough lines for deskewing
+    
+    # take average of the first 5 lines
+    angle = np.mean(lines[:5,:,1])*180/np.pi
+    # if skewed angle is considerable, deskew
+    if angle > 1.0:
         h, w = img.shape
         center_point = (w//2, h//2)
         deskewed_img = cv2.warpAffine(img, cv2.getRotationMatrix2D(center_point,angle_degree,1.0), (w, h), borderValue=255)
         img = deskewed_img
 
-    return img
+    return img, angle
 
     
 def detect_grade_column(deskewed_img):
@@ -108,7 +113,9 @@ def read_grades(path):
     images = pdf_to_np(path)
     for i,img in enumerate(images):
 
-        img = deskew(img)
+        img, angle = deskew(img)
+        if angle == float('inf'):
+            continue
         
         x1,y1, x2,y2 = detect_grade_column(img)
         column = img[y1:y2,x1:x2]
